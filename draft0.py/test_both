@@ -1,0 +1,64 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import spsolve
+
+# Grid setup
+x = np.linspace(0, 1, 50)
+y = np.linspace(0, 1, 50)
+X, Y = np.meshgrid(x, y)
+
+# Source function f(x, y)
+def source_function(x, y):
+    return -2 * np.ones_like(x)
+
+# Analytical solution
+def analytical_solution(x, y):
+    return x * (1 - x) + y * (1 - y)
+
+# FEM Assembly (using finite difference for simplicity here)
+dx = x[1] - x[0]
+dy = y[1] - y[0]
+
+# Initialize potential grid
+phi = np.zeros_like(X)
+
+# Boundary conditions
+phi[0, :] = 0  # Bottom boundary
+phi[-1, :] = 0  # Top boundary
+phi[:, 0] = 0  # Left boundary
+phi[:, -1] = 0  # Right boundary
+
+# Source term on the grid
+f = source_function(X, Y)
+
+# Finite difference approximation
+for i in range(1, len(x) - 1):
+    for j in range(1, len(y) - 1):
+        phi[i, j] = 0.25 * (phi[i + 1, j] + phi[i - 1, j] + phi[i, j + 1] + phi[i, j - 1] - dx**2 * f[i, j])
+
+# Analytical solution
+phi_analytical = analytical_solution(X, Y)
+
+# Error computation
+error = np.abs(phi_analytical - phi)
+
+# Visualization
+fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+
+# Numerical solution
+c1 = axs[0].contourf(X, Y, phi, levels=50, cmap='viridis')
+axs[0].set_title('Numerical Solution (FEM)')
+plt.colorbar(c1, ax=axs[0])
+
+# Analytical solution
+c2 = axs[1].contourf(X, Y, phi_analytical, levels=50, cmap='viridis')
+axs[1].set_title('Analytical Solution')
+plt.colorbar(c2, ax=axs[1])
+
+# Error plot
+c3 = axs[2].contourf(X, Y, error, levels=50, cmap='Reds')
+axs[2].set_title('Error (|Analytical - Numerical|)')
+plt.colorbar(c3, ax=axs[2])
+
+plt.show()
